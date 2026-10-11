@@ -13,8 +13,6 @@ pub fn install_img(platform: &str, device: &Path) -> anyhow::Result<()> {
     let image_path = crate::image::image_cache_dir()?
         .join(format!("{}.img", platform));
 
-    // Form the dd command to write the desired platform img to spec'd device
-    println!("Now writing image {} to {}", image_path.display(), device.display());
 
     // Confirm user indeed wants to install the image to the device
     print!("Install {image_path:?} to {device:?}? [y/N] ");
@@ -29,6 +27,9 @@ pub fn install_img(platform: &str, device: &Path) -> anyhow::Result<()> {
         return Ok(());
     }
 
+    // Form the dd command to write the desired platform img to spec'd device
+    println!("Now writing image {} to {}\n", image_path.display(), device.display());
+
     // Run dd command
     sudo_cmd("dd")
         .arg(format!("if={}", image_path.display()))
@@ -41,7 +42,7 @@ pub fn install_img(platform: &str, device: &Path) -> anyhow::Result<()> {
         )?;
 
     // Expand the partition beyond the image written to the SD, always 2
-    println!("Now growing root partition to whole disk");
+    println!("\nNow growing root partition to whole disk\n");
     sudo_cmd("growpart")
         .arg(device)
         .arg("2")
@@ -49,7 +50,7 @@ pub fn install_img(platform: &str, device: &Path) -> anyhow::Result<()> {
         .context("Failed to grow partition")?;
 
     // Repair disk if necessary
-    println!("Running e2fsck to fix inconsistencies...");
+    println!("\nRunning e2fsck to fix inconsistencies...\n");
     let root_device = format!("{}2", device.display()).to_string();
     sudo_cmd("e2fsck")
         .arg("-f")
@@ -59,7 +60,7 @@ pub fn install_img(platform: &str, device: &Path) -> anyhow::Result<()> {
 
     // Finalize by creating filesystem on the resized disk
     println!(
-        "Root partition healthy. Final step: make a new filesystem on the resized partition."
+        "\nRoot partition healthy. Final step: make a new filesystem on the resized partition.\n"
     );
 
     sudo_cmd("resize2fs")
